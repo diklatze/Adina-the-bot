@@ -1,0 +1,16 @@
+{
+  "name": "koo-bot",
+  "version": "1.0.0",
+  "description": "the best koobot in town",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Dikla Tzemah Weyl",
+  "license": "ISC",
+  "dependencies": {
+    "botbuilder": "^3.10.2",
+    "restify": "^6.0.1",
+    "xmlhttprequest": "^1.8.0"
+  }
+}

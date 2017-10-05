@@ -19,6 +19,9 @@ var connector = new builder.ChatConnector({
 server.post('/api/messages', connector.listen());
 
 
+
+ const LUIS_MODEL_URL = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/aebb4c01-90ba-468e-a66e-d4616b8b8f3c?subscription-key=226ff29b37b84885b5185b62652a600c&timezoneOffset=0&verbose=true';
+
 function httpGet(theUrl) {
     var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
     var xmlHttp = new XMLHttpRequest();
@@ -36,133 +39,50 @@ function myString(myString) {
  var lala = myString ("kookoo");
 
 //*******Importent DO Not DELETE****************** */
+// var bot = new builder.UniversalBot(connector, function (session) {
+//     var hi = httpGet("https://service-hello-world.azurewebsites.net/hello");
+//     session.send("Yossi said: %s", hi);
+// });
+
+
 var bot = new builder.UniversalBot(connector, function (session) {
-    var hi = httpGet("https://service-hello-world.azurewebsites.net/hello");
-    session.send("Yossi said: %s", hi);
+    session.send('Sorry, I did not understand \'%s\'. Type \'help\' if you need assistance.', session.message.text);
 });
 
-// const bot = module.exports = new builder.UniversalBot(connector, [
-//     // this section becomes the root dialog
-//     // If a conversation hasn't been started, and the message
-//     // sent by the user doesn't match a pattern, the
-//     // conversation will start here
-//     (session, args, next) => {
-//         session.send(`Hi there! I'm a sample bot showing how multiple dialogs work.`);
-//         session.send(`Let's start the first dialog, which will ask you your name.`);
+var recognizer = new builder.LuisRecognizer(LUIS_MODEL_URL);
+bot.recognizer(recognizer);
 
-//         // Launch the getName dialog using beginDialog
-//         // When beginDialog completes, control will be passed
-//         // to the next function in the waterfall
-//         session.beginDialog('getName');
-//     },
-//     (session, results, next) => {
-//         // executed when getName dialog completes
-//         // results parameter contains the object passed into endDialogWithResults
 
-//         // check for a response
-//         if (results.response) {
-//             const name = session.privateConversationData.name = results.response;
+bot.dialog('OnDevice.Help', function (session) {
+    session.endDialog('Hi! My name is Adina, How can i help you? ');
+}).triggerAction({
+    matches: 'OnDevice.Help'
+});
 
-//             // When calling another dialog, you can pass arguments in the second parameter
-//             session.beginDialog('getAge', { name: name });
-//         } else {
-//             // no valid response received - End the conversation
-//             session.endConversation(`Sorry, I didn't understand the response. Let's start over.`);
+bot.dialog('Greeting', function (session) {
+    session.endDialog('i`m fine, thank you , How can i help you? ');
+}).triggerAction({
+    matches: 'Greeting'
+});
+
+// bot.dialog('ReceivedPayment', function (session, args,results) {
+//     var companyName = builder.EntityRecognizer.findEntity(args.intent.entities, 'companies').entity;
+    
+//     var startDate = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.datetimeV2.daterange').entity;
+//     var endDate = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.datetimeV2.daterange');
+    
+
+    
+    
+//     session.send("Yossi said: %s", startDate);
+//     session.send("Yossi said: %s", endDate);
+
+// }).triggerAction({
+//     matches: 'ReceivedPayment'
+// });
+// bot.matches('ReceivedPayment'[
+//         (session, response) => {
+//             session.send("Stopping loop.")
+//             loop = false;
 //         }
-//     },
-//     (session, results, next) => {
-//         // executed when getAge dialog completes
-//         // results parameter contains the object passed into endDialogWithResults
-
-//         // check for a response
-//         if (results.response) {
-//             const age = session.privateConversationData.age = results.response;
-//             const name = session.privateConversationData.name;
-
-//             session.endConversation(`Hello ${name}. You are ${age}`);
-//         } else {
-//             // no valid response received - End the conversation
-//             session.endConversation(`Sorry, I didn't understand the response. Let's start over.`);
-//         }
-//     },
-// ]);
-
-// bot.dialog('getName', [
-//     (session, args, next) => {
-//         // store reprompt flag
-//         if(args) {
-//             session.dialogData.isReprompt = args.isReprompt;
-//         }
-
-//         // prompt user
-//         builder.Prompts.text(session, 'What is your name?');
-//     },
-//     (session, results, next) => {
-//         const name = results.response;
-
-//         if (!name || name.trim().length < 3) {
-//             // Bad response. Logic for single re-prompt
-//             if (session.dialogData.isReprompt) {
-//                 // Re-prompt ocurred
-//                 // Send back empty string
-//                 session.endDialogWithResult({ response: '' });
-//             } else {
-//                 // Set the flag
-//                 session.send('Sorry, name must be at least 3 characters.');
-
-//                 // Call replaceDialog to start the dialog over
-//                 // This will replace the active dialog on the stack
-//                 // Send a flag to ensure we only reprompt once
-//                 session.replaceDialog('getName', { isReprompt: true });
-//             }
-//         } else {
-//             // Valid name received
-//             // Return control to calling dialog
-//             // Pass the name in the response property of results
-//             session.endDialogWithResult({ response: name.trim() });
-//         }
-//     }
-// ]);
-
-// bot.dialog('getAge', [
-//     (session, args, next) => {
-//         let name = session.dialogData.name = 'User';
-
-//         if (args) {
-//             // store reprompt flag
-//             session.dialogData.isReprompt = args.isReprompt;
-
-//             // retrieve name
-//             name = session.dialogData.name = args.name;
-//         }
-
-//         // prompt user
-//         builder.Prompts.number(session, `How old are you, ${name}?`);
-//     },
-//     (session, results, next) => {
-//         const age = results.response;
-
-//         // Basic validation - did we get a response?
-//         if (!age || age < 13 || age > 90) {
-//             // Bad response. Logic for single re-prompt
-//             if (session.dialogData.isReprompt) {
-//                 // Re-prompt ocurred
-//                 // Send back empty string
-//                 session.endDialogWithResult({ response: '' });
-//             } else {
-//                 // Set the flag
-//                 session.dialogData.didReprompt = true;
-//                 session.send(`Sorry, that doesn't look right.`);
-//                 // Call replaceDialog to start the dialog over
-//                 // This will replace the active dialog on the stack
-//                 session.replaceDialog('getAge', 
-//                     { name: session.dialogData.name, isReprompt: true });
-//             }
-//         } else {
-//             // Valid city received
-//             // Return control to calling dialog
-//             // Pass the city in the response property of results
-//             session.endDialogWithResult({ response: age });
-//         }
-//     }
-// ]);
+//     ])

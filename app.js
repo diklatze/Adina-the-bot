@@ -1,5 +1,7 @@
 var restify = require('restify');
 var builder = require('botbuilder');
+var LuisActions = require('./core');
+
 //var spellService = require('./spell-service');
 
 
@@ -65,21 +67,33 @@ bot.dialog('Greeting', function (session) {
     matches: 'Greeting'
 });
 
-// bot.dialog('ReceivedPayment', function (session, args,results) {
-//     var companyName = builder.EntityRecognizer.findEntity(args.intent.entities, 'companies').entity;
+bot.dialog('ReceivedPayment', function (session, args,results) {
+    var companyName = builder.EntityRecognizer.findEntity(args.intent.entities, 'companies').entity;
     
-//     var startDate = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.datetimeV2.daterange').entity;
-//     var endDate = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.datetimeV2.daterange');
-    
+    //var startDate = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.datetimeV2.daterange');
+    //var startDate = builder.EntityRecognizer.recognizeTime(session.message.text).entity;
+    const dt_daterange = builder.EntityRecognizer.findEntity(args.intent.entities, 
+    'builtin.datetimeV2.daterange');
+
+    const startDate = dt_daterange.resolution.values[0]['start'];
+    const endDate = dt_daterange.resolution.values[0]['end'];
+
 
     
-    
-//     session.send("Yossi said: %s", startDate);
-//     session.send("Yossi said: %s", endDate);
+    // LuisActions.BuiltInTypes.DateTime.Date =
 
-// }).triggerAction({
-//     matches: 'ReceivedPayment'
-// });
+    //var date = LuisActions.extractParametersFromEntities(endDate);
+    
+   // session.send("Yossi said: %s", startDate);
+   
+   var service_answer = httpGet("http://service-payments.azurewebsites.net/creditorPaymentActivationRequests/search/ReceivedPayment?name="+companyName+"&start="+startDate+"&end="+endDate);
+
+    session.send("Yossi said: %s", startDate);
+    session.send("Yossi said: %s", service_answer);
+
+}).triggerAction({
+    matches: 'ReceivedPayment'
+});
 // bot.matches('ReceivedPayment'[
 //         (session, response) => {
 //             session.send("Stopping loop.")

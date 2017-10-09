@@ -20,7 +20,10 @@ var connector = new builder.ChatConnector({
 // Listen for messages from users 
 server.post('/api/messages', connector.listen());
 
-
+var options = {
+    year: "numeric", month: "short",
+    day: "numeric"
+};
 
 const LUIS_MODEL_URL = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/aebb4c01-90ba-468e-a66e-d4616b8b8f3c?subscription-key=226ff29b37b84885b5185b62652a600c&timezoneOffset=0&verbose=true';
 
@@ -39,6 +42,7 @@ function myString(myString) {
 }
 
 
+
 function amountCalc(obj, length) {
     var sum = 0;
     for (i = 0; i < length; i++) {
@@ -48,15 +52,9 @@ function amountCalc(obj, length) {
     return sum;
 }
 
-// function findLastTransaction(arr) {
-//     arr.sort(function(a, b) {
-//         var dateA = new Date(a.GrpHdr.CredDtTm), dateB = new Date(b.GrpHdr.CredDtTm);
-//         return a>b ? -1 : a<b ? 1 : 0;
-//     });
-
-//     return arr;
-
-// }
+function firstToUpperCase(str) {
+    return str.substr(0, 1).toUpperCase() + str.substr(1);
+}
 
 function findLastTransaction(obj, length) {
     var recentPayment;
@@ -123,26 +121,28 @@ bot.dialog('Greeting', function (session) {
 
 bot.dialog('ReceivedPayment', function (session, args, results) {
     var companyName = builder.EntityRecognizer.findEntity(args.intent.entities, 'companies').entity;
-    //var startDate = builder.EntityRecognizer.findEntity(args.intent.entities, 'builtin.datetimeV2.daterange');
-    //var startDate = builder.EntityRecognizer.recognizeTime(session.message.text).entity;
     const dt_daterange = builder.EntityRecognizer.findEntity(args.intent.entities,
         'builtin.datetimeV2.daterange');
     const startDate = dt_daterange.resolution.values[0]['start'];
     const endDate = dt_daterange.resolution.values[0]['end'];
+
+
     // session.send("Yossi said: %s", startDate);
     var service_answer = httpGet("http://service-payments.azurewebsites.net/creditorPaymentActivationRequests/search/ReceivedPayment?name=" + companyName + "&start=" + startDate + "&end=" + endDate);
-    var text = '{ "name":"John", "birth":"1986-12-14", "city":"New York"}';
+
     // var obj = JSON.parse(text);
     var obj = JSON.parse(service_answer);
+    var start = new Date(startDate);
     session.sendTyping();
     setTimeout(function () {
         if (obj._embedded.creditorPaymentActivationRequests.length == 0) {
-            session.endDialog("Sorry, I did not find any transaction from %s since %s", companyName, startDate)
+            session.endDialog("Sorry, I did not find any transaction from %s since %s", firstToUpperCase(companyName), start.toLocaleDateString('en-US', options))
         }
-        if (obj._embedded.creditorPaymentActivationRequests.length == 1) {
-            session.endDialog("you received only one transaction from %s ,to the amount of %s $", companyName, amountCalc(obj, obj._embedded.creditorPaymentActivationRequests.length));
+        else if (obj._embedded.creditorPaymentActivationRequests.length == 1) {
+            session.endDialog("you received only one transaction from %s ,to the amount of %s ", firstToUpperCase(companyName), amountCalc(obj, obj._embedded.creditorPaymentActivationRequests.length).toLocaleString('en-US', {  style: 'currency',  currency: 'USD',}));
         }
-        session.endDialog("You recieved from %s %d payments, total of %d $ ", companyName, obj._embedded.creditorPaymentActivationRequests.length, amountCalc(obj, obj._embedded.creditorPaymentActivationRequests.length));
+        else{
+        session.endDialog("You received from %s %d payments, total of %s  ", firstToUpperCase(companyName), obj._embedded.creditorPaymentActivationRequests.length, amountCalc(obj, obj._embedded.creditorPaymentActivationRequests.length).toLocaleString('en-US', {  style: 'currency',  currency: 'USD',}));}
         //session.send("Yossi said: %s", obj._embedded.creditorPaymentActivationRequests.length);
     }, 3000);
 
@@ -166,15 +166,16 @@ bot.dialog('ReceivedPaymentBetweenDatesGreaterThanAmount', function (session, ar
     session.sendTyping();
     setTimeout(function () {
         if (obj._embedded.creditorPaymentActivationRequests.length == 0) {
-            session.endDialog("Sorry, no transactions received from %s between these dates that are above %s", companyName, amountAbove)
+            session.endDialog("Sorry, no transactions received from %s between these dates that are above %s", firstToUpperCase(companyName), parseInt(amountAbove).toLocaleString('en-US', {  style: 'currency',  currency: 'USD'}))
         }
-        if (obj._embedded.creditorPaymentActivationRequests.length == 1) {
-            session.endDialog("Yes, you received one transaction from %s ,above %s$ ", companyName, amountAbove);
+        else if (obj._embedded.creditorPaymentActivationRequests.length == 1) {
+            session.endDialog("Yes, you received one transaction from %s ,above %s ", firstToUpperCase(companyName), parseInt(amountAbove).toLocaleString('en-US', {  style: 'currency',  currency: 'USD'}));
         }
-        session.endDialog("Yes, you received %s transactions from %s ,above %s$ . Last transaction dated %s, to the amount of %s$", obj._embedded.creditorPaymentActivationRequests.length, companyName, amountAbove, new Date(findLastTransaction(obj, obj._embedded.creditorPaymentActivationRequests.length).GrpHdr.CredDtTm),
-    findLastTransaction(obj, obj._embedded.creditorPaymentActivationRequests.length).PmtInf.CdtTrfTx[0].Amt.InstdAmt);
-        //session.send("Yossi said: %s", obj._embedded.creditorPaymentActivationRequests.length);
-        // session.endDialog(findLastTransaction(obj._embedded.creditorPaymentActivationRequests));
+        else{
+        session.endDialog("Yes, you received %s transactions from %s ,above %s . Last transaction dated %s, to the amount of %s",
+            obj._embedded.creditorPaymentActivationRequests.length, firstToUpperCase(companyName), parseInt(amountAbove).toLocaleString('en-US', {  style: 'currency',  currency: 'USD'}), new Date(findLastTransaction(obj, obj._embedded.creditorPaymentActivationRequests.length).GrpHdr.CredDtTm).toLocaleDateString('en-US', options), 
+            parseInt(findLastTransaction(obj, obj._embedded.creditorPaymentActivationRequests.length).PmtInf.CdtTrfTx[0].Amt.InstdAmt).toLocaleString('en-US', {  style: 'currency',  currency: 'USD'}));}
+        
     }, 3000);
 
 }).triggerAction({

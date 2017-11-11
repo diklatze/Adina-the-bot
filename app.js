@@ -451,23 +451,37 @@ bot.dialog('RequestForPayment', [
 
     function (session, results, next) {
         if (results.response) {
-            
-            
-            session.dialogData.payment.currency = results.response;
+            builder.LuisRecognizer.recognize(results.response, LUIS_MODEL_URL, function (err, intents, entities) {
+                if (entities) {
+                    var dt_currency = builder.EntityRecognizer.findEntity(entities, 'builtin.currency');
+
+                    
+                    if (dt_currency != null) {
+                        currency = dt_currency.resolution.unit;
+                    }
+
+                    session.dialogData.payment.currency = currency;
+                
+
+                    if (session.dialogData.payment.addmessage == null) {
+                        session.sendTyping();
+
+                        setTimeout(function () {
+                            builder.Prompts.text(session, "Do you want to add a message to the Request for Payment? (Yes/No)");
+                        }, 3000);
+                    } else {
+                        next(); // Skip if we already have this info.
+                    }
+                }
+            });
+
+
         }
-        if (session.dialogData.payment.addmessage == null) {
-            // session.sendTyping();
 
-            // setTimeout(function () {
-
-            //builder.Prompts.text(session, `Any message to add in the request to ${session.dialogData.payment.companyName} ? Yes/No`);
-            builder.Prompts.text(session, "Do you want to add a message to the Request for Payment? (Yes/No)");
-            // }, 3000);
-
-        } else {
-            next(); // Skip if we already have this info.
-        }
     },
+       
+            
+             
 
     function (session, results, next) {
         if (results.response) {

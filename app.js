@@ -429,21 +429,22 @@ bot.dialog('RequestForPayment', [
                     session.dialogData.payment.amount = amount;
                     session.dialogData.payment.currency = currency;
 
-                    if (session.dialogData.payment.currency == null) {
-                        session.sendTyping();
-
-                        setTimeout(function () {
-                            builder.Prompts.text(session, "What is the Request for Payment currency?");
-                        }, 3000);
-                    } else {
-                        next(); // Skip if we already have this info.
-                    }
+                    
                 }
             });
             // const dt_amount = recognizer.recognize(results.response);
             //const dt_currency = builder.EntityRecognizer.findEntity(results.response.intent.entities, 'builtin.currency');
 
 
+        }
+        if (session.dialogData.payment.currency == null) {
+            session.sendTyping();
+
+            setTimeout(function () {
+                builder.Prompts.text(session, "What is the Request for Payment currency?");
+            }, 3000);
+        } else {
+            next(); // Skip if we already have this info.
         }
 
     },
@@ -463,19 +464,21 @@ bot.dialog('RequestForPayment', [
                     session.dialogData.payment.currency = currency;
                 
 
-                    if (session.dialogData.payment.addmessage == null) {
-                        session.sendTyping();
-
-                        setTimeout(function () {
-                            builder.Prompts.text(session, "Do you want to add a message to the Request for Payment? (Yes/No)");
-                        }, 3000);
-                    } else {
-                        next(); // Skip if we already have this info.
-                    }
+                   
                 }
             });
 
 
+        }
+
+        if (session.dialogData.payment.addmessage == null) {
+            session.sendTyping();
+
+            setTimeout(function () {
+                builder.Prompts.confirm(session, "Do you want to add a message to the Request for Payment? (Yes/No)");
+            }, 3000);
+        } else {
+            next(); // Skip if we already have this info.
         }
 
     },
@@ -487,7 +490,7 @@ bot.dialog('RequestForPayment', [
         if (results.response) {
             session.dialogData.payment.addmessage = results.response;
         }
-        if (session.dialogData.payment.addmessage.toUpperCase().trim() == "YES") {
+        if (session.dialogData.payment.addmessage) {
             // session.sendTyping();
             // setTimeout(function () {
             //builder.Prompts.text(session, `please type the message to ${session.dialogData.payment.companyName}`);
@@ -512,11 +515,11 @@ bot.dialog('RequestForPayment', [
             }
 
             if (session.dialogData.payment.message) {
-                builder.Prompts.text(session, `Okay. I will send a Request for Payment to ${session.dialogData.payment.companyName} for ${session.dialogData.payment.currency} ${session.dialogData.payment.amount} with the message ${session.dialogData.payment.message}. Confirm? (Yes/No)`);
+                builder.Prompts.confirm(session, `Okay. I will send a Request for Payment to ${session.dialogData.payment.companyName} for ${session.dialogData.payment.currency} ${session.dialogData.payment.amount} with the message ${session.dialogData.payment.message}. Confirm? (Yes/No)`);
                 //    }, 6000);
             }
             else {
-                builder.Prompts.text(session, `Okay. I will send a Request for Payment to ${session.dialogData.payment.companyName} for ${session.dialogData.payment.currency} ${session.dialogData.payment.amount}. will be send now. Confirm? (Yes/No)`);
+                builder.Prompts.confirm(session, `Okay. I will send a Request for Payment to ${session.dialogData.payment.companyName} for ${session.dialogData.payment.currency} ${session.dialogData.payment.amount}. will be send now. Confirm? (Yes/No)`);
             }
 
         } else {
@@ -528,7 +531,7 @@ bot.dialog('RequestForPayment', [
         if (results.response) {
             session.dialogData.payment.confirmed = results.response;
         }
-        if (session.dialogData.payment.confirmed.toUpperCase().trim() == "YES") {
+        if (session.dialogData.payment.confirmed) {
             var datetoday = todayDate();
             var datetodaytime = todayDateWithTime();
             var messageID = createMessageId();
